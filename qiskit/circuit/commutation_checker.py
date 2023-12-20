@@ -16,9 +16,10 @@ from functools import lru_cache
 from typing import List, Union
 import numpy as np
 
-from qiskit.circuit import Qubit
+from qiskit.circuit import Qubit, ControlledGate, Instruction, ParameterExpression
+from qiskit.circuit.library import CXGate
 from qiskit.circuit.operation import Operation
-from qiskit.circuit.controlflow import ControlFlowOp
+from qiskit.circuit.controlflow import ControlFlowOp, CONTROL_FLOW_OP_NAMES
 from qiskit.quantum_info.operators import Operator
 
 
@@ -206,7 +207,53 @@ def _hashable_parameters(params):
     return ("fallback", str(params))
 
 
+def is_commutation_supported(op):
+    """
+    Filter operations whose commutation is not supported due to bugs in transpiler passes invoking
+    commutation analysis.
+    Args:
+        op (Operation): operation to be checked for commutation relation
+    Return:
+        True if determining the commutation of op is currently supported
+    """
+    # Bug in CommutativeCancellation, e.g. see gh-8553
+    if getattr(op, "condition", False):
+        return False
+
+    # Commutation of ControlFlow gates also not supported yet. This may be pending a control flow graph.
+    if op.name in CONTROL_FLOW_OP_NAMES:
+        return False
+
+    return True
+
+
 _skipped_op_names = {"measure", "reset", "delay"}
+
+
+def is_commutation_skipped(op, qargs, max_num_qubits):
+    """
+    Filter operations whose commutation will not be determined.
+    Args:
+        op (Operation): operation to be checked for commutation relation
+        qargs (List): operation qubits
+        max_num_qubits (int): the maximum number of qubits to consider, the check may be skipped if
+                the number of qubits for either operation exceeds this amount.
+    Return:
+        True if determining the commutation of op is currently not supported
+    """
+    if len(qargs) > max_num_qubits:
+        return True
+
+    if getattr(op, "_directive", False):
+        return True
+
+    if op.name in _skipped_op_names:
+        return True
+
+    if getattr(op, "is_parameterized", False) and op.is_parameterized():
+        return True
+
+    return False
 
 
 def _commutation_precheck(
@@ -218,44 +265,14 @@ def _commutation_precheck(
     cargs2: List,
     max_num_qubits,
 ):
-    # pylint: disable=too-many-return-statements
-
-    # We don't support commutation of conditional gates for now due to bugs in
-    # CommutativeCancellation.  See gh-8553.
-    if getattr(op1, "condition", None) is not None or getattr(op2, "condition", None) is not None:
+    if not is_commutation_supported(op1) or not is_commutation_supported(op2):
         return False
 
-    # Commutation of ControlFlow gates also not supported yet. This may be
-    # pending a control flow graph.
-    if isinstance(op1, ControlFlowOp) or isinstance(op2, ControlFlowOp):
-        return False
-
-    # These lines are adapted from dag_dependency and say that two gates over
-    # different quantum and classical bits necessarily commute. This is more
-    # permissive that the check from commutation_analysis, as for example it
-    # allows to commute X(1) and Measure(0, 0).
-    # Presumably this check was not present in commutation_analysis as
-    # it was only called on pairs of connected nodes from DagCircuit.
-    intersection_q = set(qargs1).intersection(set(qargs2))
-    intersection_c = set(cargs1).intersection(set(cargs2))
-    if not (intersection_q or intersection_c):
+    if set(qargs1).isdisjoint(qargs2) and set(cargs1).isdisjoint(cargs2):
         return True
 
-    # Skip the check if the number of qubits for either operation is too large
-    if len(qargs1) > max_num_qubits or len(qargs2) > max_num_qubits:
-        return False
-
-    # These lines are adapted from commutation_analysis, which is more restrictive than the
-    # check from dag_dependency when considering nodes with "_directive".  It would be nice to
-    # think which optimizations from dag_dependency can indeed be used.
-    if op1.name in _skipped_op_names or op2.name in _skipped_op_names:
-        return False
-
-    if getattr(op1, "_directive", False) or getattr(op2, "_directive", False):
-        return False
-    if (getattr(op1, "is_parameterized", False) and op1.is_parameterized()) or (
-        getattr(op2, "is_parameterized", False) and op2.is_parameterized()
-    ):
+    if (is_commutation_skipped(op1, qargs1, max_num_qubits) or
+            is_commutation_skipped(op2, qargs2, max_num_qubits)):
         return False
 
     return None
@@ -404,3 +421,5 @@ def _commute_matmul(
         op21 = operator_1.compose(operator_2, qargs=second_qarg, front=True)
     ret = op12 == op21
     return ret
+
+
