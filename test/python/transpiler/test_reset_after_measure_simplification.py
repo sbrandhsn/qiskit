@@ -90,7 +90,9 @@ class TestResetAfterMeasureSimplificationt(QiskitTestCase):
 
     def test_simple_multi_resets_with_resets_before_measure(self):
         """Reset BEFORE measurement not collapsed"""
-        qc = QuantumCircuit(2, 2)
+        qr = QuantumRegister(2)
+        cr = ClassicalRegister(2)
+        qc = QuantumCircuit(qr, cr)
         qc.measure(0, 0)
         qc.reset(0)
         qc.reset(1)
@@ -98,9 +100,10 @@ class TestResetAfterMeasureSimplificationt(QiskitTestCase):
 
         new_qc = ResetAfterMeasureSimplification()(qc)
 
-        ans_qc = QuantumCircuit(2, 2)
+
+        ans_qc = QuantumCircuit(qr, cr)
         ans_qc.measure(0, 0)
-        ans_qc.x(0).c_if(Clbit(ClassicalRegister(2, "c"), 0), 1)
+        ans_qc.x(0).c_if(cr[0], 1)
         ans_qc.reset(1)
         ans_qc.measure(1, 1)
 

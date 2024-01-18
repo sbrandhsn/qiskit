@@ -152,22 +152,22 @@ class TestDagRegisters(QiskitTestCase):
     def test_dag_get_qubits(self):
         """get_qubits() method"""
         dag = DAGCircuit()
-        dag.add_qreg(QuantumRegister(1, "qr1"))
-        dag.add_qreg(QuantumRegister(1, "qr10"))
-        dag.add_qreg(QuantumRegister(1, "qr0"))
-        dag.add_qreg(QuantumRegister(1, "qr3"))
-        dag.add_qreg(QuantumRegister(1, "qr4"))
-        dag.add_qreg(QuantumRegister(1, "qr6"))
+        qr1 = QuantumRegister(1, "qr1")
+        qr10 = QuantumRegister(1, "qr10")
+        qr0 = QuantumRegister(1, "qr0")
+        qr3 = QuantumRegister(1, "qr3")
+        qr4 = QuantumRegister(1, "qr4")
+        qr6 = QuantumRegister(1, "qr6")
+
+        dag.add_qreg(qr1)
+        dag.add_qreg(qr10)
+        dag.add_qreg(qr0)
+        dag.add_qreg(qr3)
+        dag.add_qreg(qr4)
+        dag.add_qreg(qr6)
+
         self.assertListEqual(
-            dag.qubits,
-            [
-                QuantumRegister(1, "qr1")[0],
-                QuantumRegister(1, "qr10")[0],
-                QuantumRegister(1, "qr0")[0],
-                QuantumRegister(1, "qr3")[0],
-                QuantumRegister(1, "qr4")[0],
-                QuantumRegister(1, "qr6")[0],
-            ],
+            dag.qubits, [*qr1, *qr10, *qr0, *qr3, *qr4, *qr6]
         )
 
     def test_add_reg_duplicate(self):
@@ -563,7 +563,7 @@ class TestDagApplyOperation(QiskitTestCase):
                     (
                         self.dag.input_map[new_creg[0]]._node_id,
                         meas_node._node_id,
-                        Clbit(new_creg, 0),
+                        new_creg[0],
                     ),
                 ]
             ),
@@ -578,7 +578,7 @@ class TestDagApplyOperation(QiskitTestCase):
                     (
                         meas_node._node_id,
                         self.dag.output_map[new_creg[0]]._node_id,
-                        Clbit(new_creg, 0),
+                        new_creg[0],
                     ),
                 ]
             ),

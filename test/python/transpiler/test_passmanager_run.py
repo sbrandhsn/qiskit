@@ -139,7 +139,7 @@ class TestPassManagerRun(QiskitTestCase):
         pass_manager = level_1_pass_manager(
             PassManagerConfig.from_backend(
                 FakeMelbourne(),
-                initial_layout=Layout.from_qubit_list(initial_layout),
+                initial_layout=Layout.from_intlist(initial_layout),
                 seed_transpiler=42,
             )
         )
