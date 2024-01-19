@@ -13,7 +13,6 @@
 """Test the ResetAfterMeasureSimplification pass"""
 
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
-from qiskit.circuit.classicalregister import Clbit
 from qiskit.transpiler.passes.optimization import ResetAfterMeasureSimplification
 from qiskit.test import QiskitTestCase
 
@@ -99,7 +98,6 @@ class TestResetAfterMeasureSimplificationt(QiskitTestCase):
         qc.measure(1, 1)
 
         new_qc = ResetAfterMeasureSimplification()(qc)
-
 
         ans_qc = QuantumCircuit(qr, cr)
         ans_qc.measure(0, 0)

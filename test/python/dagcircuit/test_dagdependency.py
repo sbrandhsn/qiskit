@@ -76,9 +76,7 @@ class TestDagRegisters(QiskitTestCase):
         dag.add_qreg(qr4)
         dag.add_qreg(qr6)
 
-        self.assertListEqual(
-            dag.qubits, [*qr1, *qr10, *qr0, *qr3, *qr4, *qr6]
-        )
+        self.assertListEqual(dag.qubits, [*qr1, *qr10, *qr0, *qr3, *qr4, *qr6])
 
     def test_add_reg_duplicate(self):
         """add_qreg with the same register twice is not allowed."""

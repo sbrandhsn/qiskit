@@ -14,14 +14,14 @@
 
 import unittest
 
-from qiskit.circuit.quantumcircuit import BitLocations
 from test import combine
 from ddt import ddt, data
 
 import numpy as np
 
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
-from qiskit.circuit import Qubit, Gate, ControlFlowOp, ForLoopOp
+from qiskit.circuit.quantumcircuit import BitLocations
+from qiskit.circuit import Gate, ControlFlowOp, ForLoopOp
 from qiskit.compiler import transpile, assemble
 from qiskit.transpiler import CouplingMap, Layout, PassManager, TranspilerError, Target
 from qiskit.circuit.library import U2Gate, U3Gate, QuantumVolume, CXGate, CZGate, XGate
@@ -94,7 +94,16 @@ def circuit_2532():
     return circuit
 
 
-def get_layout(qc, layout):
+def get_layout_as_bitlocations(qc, layout):
+    """Get `BitLocations` of qubits in the layout of a quantum circuit
+
+    Args:
+        qc (QuantumCircuit): a quantum circuit
+        layout (Layout): a layout
+
+    Returns:
+        dict: a dictionary mapping a set of physical qubits, i.e. integers, to set of `BitLocations`
+    """
     return {p: qc.find_bit(v) if v in qc.qubits else None for p, v in layout._p2v.items()}
 
 
@@ -276,6 +285,7 @@ class TestPresetPassManager(QiskitTestCase):
         )
         self.assertEqual(gates_in_basis_true_count + 1, collect_2q_blocks_count)
 
+
 @ddt
 class TestTranspileLevels(QiskitTestCase):
     """Test transpiler on fake backend"""
@@ -400,16 +410,15 @@ class TestPassesInspection(QiskitTestCase):
 
         self.assertIn("SetLayout", self.passes)
         self.assertIn("ApplyLayout", self.passes)
-        ancilla = QuantumRegister(3, "ancilla")
         expected_layout = {
             0: None,
             1: None,
             2: BitLocations(1, [(qr, 1)]),
             3: None,
-            4: BitLocations(0, [(qr, 0)])
+            4: BitLocations(0, [(qr, 0)]),
         }
         self.assertEqual(
-            get_layout(qc, transpiled._layout.initial_layout),
+            get_layout_as_bitlocations(qc, transpiled._layout.initial_layout),
             expected_layout,
         )
 
@@ -644,7 +653,6 @@ class TestInitialLayouts(QiskitTestCase):
         # build a circuit which works as-is on the coupling map, using the initial layout
         qr = QuantumRegister(3, "q")
         cr = ClassicalRegister(3)
-        ancilla = QuantumRegister(13, "ancilla")
         qc = QuantumCircuit(qr, cr)
         qc.cx(qr[2], qr[1])
         qc.cx(qr[2], qr[0])
@@ -673,7 +681,7 @@ class TestInitialLayouts(QiskitTestCase):
         qc_b = transpile(qc, backend, initial_layout=initial_layout, optimization_level=level)
         qobj = assemble(qc_b)
 
-        self.assertEqual(get_layout(qc, qc_b._layout.initial_layout), final_layout)
+        self.assertEqual(get_layout_as_bitlocations(qc, qc_b._layout.initial_layout), final_layout)
 
         compiled_ops = qobj.experiments[0].instructions
         for operation in compiled_ops:
@@ -691,7 +699,6 @@ class TestInitialLayouts(QiskitTestCase):
         # build a circuit which works as-is on the coupling map, using the initial layout
         qr = QuantumRegister(5, "q")
         cr = ClassicalRegister(2)
-        ancilla = QuantumRegister(9, "ancilla")
         qc = QuantumCircuit(qr, cr)
         qc.cx(qr[2], qr[4])
         initial_layout = {
@@ -721,7 +728,7 @@ class TestInitialLayouts(QiskitTestCase):
 
         qc_b = transpile(qc, backend, initial_layout=initial_layout, optimization_level=level)
 
-        self.assertEqual(get_layout(qc, qc_b._layout.initial_layout), final_layout)
+        self.assertEqual(get_layout_as_bitlocations(qc, qc_b._layout.initial_layout), final_layout)
 
         output_qr = qc_b.qregs[0]
         for instruction in qc_b:
@@ -739,7 +746,6 @@ class TestInitialLayouts(QiskitTestCase):
         # build a circuit which works as-is on the coupling map, using the initial layout
         qr = QuantumRegister(3, "q")
         cr = ClassicalRegister(2)
-        ancilla = QuantumRegister(17, "ancilla")
 
         qc = QuantumCircuit(qr, cr)
         qc.append(U3Gate(0.1, 0.2, 0.3), [qr[0]])
@@ -774,7 +780,7 @@ class TestInitialLayouts(QiskitTestCase):
         backend = FakePoughkeepsie()
 
         qc_b = transpile(qc, backend, initial_layout=initial_layout, optimization_level=level)
-        self.assertEqual(get_layout(qc, qc_b._layout.initial_layout), final_layout)
+        self.assertEqual(get_layout_as_bitlocations(qc, qc_b._layout.initial_layout), final_layout)
 
         output_qr = qc_b.qregs[0]
         self.assertIsInstance(qc_b[0].operation, U3Gate)
@@ -863,7 +869,9 @@ class TestFinalLayouts(QiskitTestCase):
         backend = FakeTokyo()
 
         result = transpile(qc, backend, optimization_level=level, seed_transpiler=42)
-        self.assertEqual(get_layout(qc, result._layout.initial_layout), expected_layouts[level])
+        self.assertEqual(
+            get_layout_as_bitlocations(qc, result._layout.initial_layout), expected_layouts[level]
+        )
 
     @data(0, 1, 2, 3)
     def test_layout_tokyo_fully_connected_cx(self, level):
@@ -874,8 +882,6 @@ class TestFinalLayouts(QiskitTestCase):
             for qubit_control in qr:
                 if qubit_control != qubit_target:
                     qc.cx(qubit_control, qubit_target)
-
-        ancilla = QuantumRegister(15, "ancilla")
 
         trivial_layout = {
             0: BitLocations(0, [(qr, 0)]),
@@ -917,7 +923,7 @@ class TestFinalLayouts(QiskitTestCase):
             13: None,
             14: None,
             15: None,
-            16:  BitLocations(4, [(qr, 4)]),
+            16: BitLocations(4, [(qr, 4)]),
             17: None,
             18: None,
             19: None,
@@ -982,7 +988,9 @@ class TestFinalLayouts(QiskitTestCase):
         ]
         backend = FakeTokyo()
         result = transpile(qc, backend, optimization_level=level, seed_transpiler=42)
-        self.assertEqual(get_layout(qc, result._layout.initial_layout), expected_layouts[level])
+        self.assertEqual(
+            get_layout_as_bitlocations(qc, result._layout.initial_layout), expected_layouts[level]
+        )
 
     @data(0, 1, 2, 3)
     def test_all_levels_use_trivial_if_perfect(self, level):
@@ -1025,8 +1033,9 @@ class TestFinalLayouts(QiskitTestCase):
             19: BitLocations(19, [(qr, 19)]),
         }
         trans_qc = transpile(qc, backend, optimization_level=level, seed_transpiler=42)
-        self.assertEqual({p: qc.find_bit(v) for p, v in trans_qc._layout.initial_layout._p2v.items()},
-                         expected)
+        self.assertEqual(
+            {p: qc.find_bit(v) for p, v in trans_qc._layout.initial_layout._p2v.items()}, expected
+        )
 
     @data(0)
     def test_trivial_layout(self, level):
@@ -1046,7 +1055,6 @@ class TestFinalLayouts(QiskitTestCase):
         qc.cx(qr[6], qr[5])
         qc.cx(qr[5], qr[0])
 
-        ancilla = QuantumRegister(10, "ancilla")
         trivial_layout = {
             0: BitLocations(0, [(qr, 0)]),
             1: BitLocations(1, [(qr, 1)]),
@@ -1074,7 +1082,9 @@ class TestFinalLayouts(QiskitTestCase):
 
         backend = FakeTokyo()
         result = transpile(qc, backend, optimization_level=level, seed_transpiler=42)
-        self.assertEqual(get_layout(qc, result._layout.initial_layout), expected_layouts[level])
+        self.assertEqual(
+            get_layout_as_bitlocations(qc, result._layout.initial_layout), expected_layouts[level]
+        )
 
     @data(0, 1, 2, 3)
     def test_initial_layout(self, level):

@@ -13,12 +13,10 @@
 """Test transpiler passes that deal with linear functions."""
 
 import unittest
-
-from qiskit import QuantumRegister
 from test import combine
-
 from ddt import ddt
 
+from qiskit import QuantumRegister
 from qiskit.circuit import QuantumCircuit, Qubit, Clbit
 from qiskit.transpiler.passes.optimization import CollectLinearFunctions
 from qiskit.transpiler.passes.synthesis import (
