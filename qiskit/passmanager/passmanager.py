@@ -19,13 +19,14 @@ from collections.abc import Callable, Iterable
 from itertools import chain
 from typing import Any
 
-import dill
 
 from qiskit.utils.parallel import parallel_map
 from .base_tasks import Task, PassManagerIR
 from .exceptions import PassManagerError
 from .flow_controllers import FlowControllerLinear
 from .compilation_status import PropertySet, WorkflowStatus, PassManagerState
+from .qiskit_dill import loads, dumps
+
 
 logger = logging.getLogger(__name__)
 
@@ -236,10 +237,11 @@ class BasePassManager(ABC):
         # See https://github.com/Qiskit/qiskit-terra/pull/3290
         # Note that serialized object is deserialized as a different object.
         # Thus, we can resue the same manager without state collision, without building it per thread.
+        qubit_cache = {}
         return parallel_map(
             _run_workflow_in_new_process,
-            values=in_programs,
-            task_kwargs={"pass_manager_bin": dill.dumps(self)},
+            values=[dumps(circuit, qubit_cache) for circuit in in_programs],
+            task_kwargs={"pass_manager_bin": dumps(self, qubit_cache), "qubit_cache": qubit_cache},
         )
 
     def to_flow_controller(self) -> FlowControllerLinear:
@@ -301,6 +303,7 @@ def _run_workflow(
 def _run_workflow_in_new_process(
     program: Any,
     pass_manager_bin: bytes,
+    qubit_cache: bytes
 ) -> Any:
     """Run single program optimization in new process.
 
@@ -312,6 +315,8 @@ def _run_workflow_in_new_process(
           Optimized program.
     """
     return _run_workflow(
-        program=program,
-        pass_manager=dill.loads(pass_manager_bin),
+        program=loads(program, qubit_cache),
+        pass_manager=loads(pass_manager_bin, qubit_cache),
     )
+
+
