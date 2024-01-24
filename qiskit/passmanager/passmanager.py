@@ -300,11 +300,7 @@ def _run_workflow(
     return out_program
 
 
-def _run_workflow_in_new_process(
-    program: Any,
-    pass_manager_bin: bytes,
-    qubit_cache: bytes
-) -> Any:
+def _run_workflow_in_new_process(program: Any, pass_manager_bin: bytes, qubit_cache: bytes) -> Any:
     """Run single program optimization in new process.
 
     Args:
@@ -318,5 +314,3 @@ def _run_workflow_in_new_process(
         program=loads(program, qubit_cache),
         pass_manager=loads(pass_manager_bin, qubit_cache),
     )
-
-
