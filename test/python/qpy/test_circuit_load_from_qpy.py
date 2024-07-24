@@ -72,6 +72,7 @@ class QpyCircuitTestCase(QiskitTestCase):
         else:
             self.assert_layout_equal(
                 circuit, circuit.layout.final_layout, new_circuit, new_circuit.layout.final_layout
+            )
         if version is not None:
             qpy_file.seek(0)
             file_version = struct.unpack("!6sB", qpy_file.read(7))[1]
