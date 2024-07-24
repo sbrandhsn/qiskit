@@ -37,9 +37,8 @@ from qiskit.pulse.library import (
     Sech,
     SechDeriv,
 )
-
 from qiskit.pulse import functional_pulse, PulseError
-from qiskit.test import QiskitTestCase
+from test import QiskitTestCase  # pylint: disable=wrong-import-order
 
 
 class TestWaveform(QiskitTestCase):
@@ -728,8 +727,7 @@ class TestSymbolicPulses(QiskitTestCase):
         self.assertEqual(drag_pulse.beta, 3)
 
         with self.assertRaises(AttributeError):
-            # pylint: disable=pointless-statement
-            drag_pulse.non_existing_parameter
+            _ = drag_pulse.non_existing_parameter
 
     def test_envelope_cache(self):
         """Test speed up of instantiation with lambdify envelope cache."""

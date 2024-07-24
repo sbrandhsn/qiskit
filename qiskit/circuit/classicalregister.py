@@ -23,7 +23,6 @@ from .bit import Bit
 
 class Clbit(Bit):
     """Implement a classical bit."""
-
     pass
 
 

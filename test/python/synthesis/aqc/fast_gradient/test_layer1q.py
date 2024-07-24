@@ -16,11 +16,12 @@ Tests for Layer1Q implementation.
 
 import unittest
 from random import randint
-import test.python.synthesis.aqc.fast_gradient.utils_for_testing as tut
 import numpy as np
+
 import qiskit.synthesis.unitary.aqc.fast_gradient.layer as lr
 from qiskit.synthesis.unitary.aqc.fast_gradient.pmatrix import PMatrix
-from qiskit.test import QiskitTestCase
+from test import QiskitTestCase  # pylint: disable=wrong-import-order
+import test.python.synthesis.aqc.fast_gradient.utils_for_testing as tut  # pylint: disable=wrong-import-order
 
 
 class TestLayer1q(QiskitTestCase):
@@ -61,7 +62,7 @@ class TestLayer1q(QiskitTestCase):
 
                 # T == P^t @ G @ P.
                 err = tut.relative_error(t_mat, iden[perm].T @ g_mat @ iden[perm])
-                self.assertLess(err, eps, "err = {:0.16f}".format(err))
+                self.assertLess(err, eps, f"err = {err:0.16f}")
                 max_rel_err = max(max_rel_err, err)
 
                 # Multiplication by permutation matrix of the left can be
@@ -78,8 +79,7 @@ class TestLayer1q(QiskitTestCase):
 
                 self.assertTrue(
                     err1 < eps and err2 < eps and err3 < eps and err4 < eps,
-                    "err1 = {:f},  err2 = {:f},  "
-                    "err3 = {:f},  err4 = {:f}".format(err1, err2, err3, err4),
+                    f"err1 = {err1:f},  err2 = {err2:f},  " f"err3 = {err3:f},  err4 = {err4:f}",
                 )
                 max_rel_err = max(max_rel_err, err1, err2, err3, err4)
 
@@ -127,12 +127,12 @@ class TestLayer1q(QiskitTestCase):
                 alt_ttmtt = pmat.finalize(temp_mat=tmp1)
 
                 err1 = tut.relative_error(alt_ttmtt, ttmtt)
-                self.assertLess(err1, _eps, "relative error: {:f}".format(err1))
+                self.assertLess(err1, _eps, f"relative error: {err1:f}")
 
                 prod = np.complex128(np.trace(ttmtt @ t4))
                 alt_prod = pmat.product_q1(layer=c4, tmp1=tmp1, tmp2=tmp2)
                 err2 = abs(alt_prod - prod) / abs(prod)
-                self.assertLess(err2, _eps, "relative error: {:f}".format(err2))
+                self.assertLess(err2, _eps, f"relative error: {err2:f}")
 
                 max_rel_err = max(max_rel_err, err1, err2)
 

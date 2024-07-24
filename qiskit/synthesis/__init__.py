@@ -51,6 +51,7 @@ Permutation Synthesis
 .. autofunction:: synth_permutation_depth_lnn_kms
 .. autofunction:: synth_permutation_basic
 .. autofunction:: synth_permutation_acg
+.. autofunction:: synth_permutation_reverse_lnn_kms
 
 Clifford Synthesis
 ==================
@@ -90,6 +91,7 @@ Basis Change Synthesis
 ======================
 
 .. autofunction:: synth_qft_line
+.. autofunction:: synth_qft_full
 
 Unitary Synthesis
 =================
@@ -98,7 +100,7 @@ Decomposition of general :math:`2^n \times 2^n` unitary matrices for any number 
 
 .. autofunction:: qs_decomposition
 
-The Approximate Quantum Compiler is available here: :mod:`qiskit.synthesis.unitary.aqc`
+The Approximate Quantum Compiler is available as the module :mod:`qiskit.synthesis.unitary.aqc`.
 
 One-Qubit Synthesis
 ===================
@@ -116,6 +118,9 @@ Two-Qubit Synthesis
 
    TwoQubitBasisDecomposer
    XXDecomposer
+   TwoQubitWeylDecomposition
+
+.. autofunction:: two_qubit_cnot_decompose
 
 """
 
@@ -132,6 +137,7 @@ from .permutation import (
     synth_permutation_depth_lnn_kms,
     synth_permutation_basic,
     synth_permutation_acg,
+    synth_permutation_reverse_lnn_kms,
 )
 from .linear import (
     synth_cnot_count_full_pmh,
@@ -157,9 +163,13 @@ from .stabilizer import (
     synth_circuit_from_stabilizers,
 )
 from .discrete_basis import SolovayKitaevDecomposition, generate_basic_approximations
-from .qft import synth_qft_line
+from .qft import synth_qft_line, synth_qft_full
 from .unitary.qsd import qs_decomposition
 from .unitary import aqc
 from .one_qubit import OneQubitEulerDecomposer
 from .two_qubit.xx_decompose import XXDecomposer
-from .two_qubit.two_qubit_decompose import TwoQubitBasisDecomposer, two_qubit_cnot_decompose
+from .two_qubit.two_qubit_decompose import (
+    TwoQubitBasisDecomposer,
+    two_qubit_cnot_decompose,
+    TwoQubitWeylDecomposition,
+)

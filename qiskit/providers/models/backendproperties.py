@@ -285,7 +285,11 @@ class BackendProperties:
         gate: str,
         qubits: Union[int, Iterable[int]] = None,
         name: str = None,
-    ) -> Union[Dict[Tuple[int, ...], Dict[str, PropertyT]], Dict[str, PropertyT], PropertyT,]:
+    ) -> Union[
+        Dict[Tuple[int, ...], Dict[str, PropertyT]],
+        Dict[str, PropertyT],
+        PropertyT,
+    ]:
         """
         Return the property of the given gate.
 
@@ -378,7 +382,10 @@ class BackendProperties:
         self,
         qubit: int,
         name: str = None,
-    ) -> Union[Dict[str, PropertyT], PropertyT,]:
+    ) -> Union[
+        Dict[str, PropertyT],
+        PropertyT,
+    ]:
         """
         Return the property of the given qubit.
 
@@ -397,9 +404,9 @@ class BackendProperties:
             if name is not None:
                 result = result[name]
         except KeyError as ex:
+            formatted_name = "y '" + name + "'" if name else "ies"
             raise BackendPropertyError(
-                "Couldn't find the propert{name} for qubit "
-                "{qubit}.".format(name="y '" + name + "'" if name else "ies", qubit=qubit)
+                f"Couldn't find the propert{formatted_name} for qubit {qubit}."
             ) from ex
         return result
 

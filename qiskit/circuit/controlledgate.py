@@ -112,9 +112,9 @@ class ControlledGate(Gate):
     @property
     def definition(self) -> QuantumCircuit:
         """Return definition in terms of other basic gates. If the gate has
-        open controls, as determined from `self.ctrl_state`, the returned
+        open controls, as determined from :attr:`ctrl_state`, the returned
         definition is conjugated with X without changing the internal
-        `_definition`.
+        ``_definition``.
         """
         cached_definition = self._cached_definition.get(
             (self.ctrl_state, self.num_ctrl_qubits), None
@@ -274,6 +274,12 @@ class ControlledGate(Gate):
             and self.definition == other.definition
         )
 
-    def inverse(self) -> "ControlledGate":
+    def inverse(self, annotated: bool = False) -> "ControlledGate" | "AnnotatedOperation":
         """Invert this gate by calling inverse on the base gate."""
-        return self.base_gate.inverse().control(self.num_ctrl_qubits, ctrl_state=self.ctrl_state)
+        if not annotated:
+            inverse_gate = self.base_gate.inverse().control(
+                self.num_ctrl_qubits, ctrl_state=self.ctrl_state
+            )
+        else:
+            inverse_gate = super().inverse(annotated=annotated)
+        return inverse_gate

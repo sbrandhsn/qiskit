@@ -69,9 +69,9 @@ class InstructionScheduleMap:
         # Do not use lambda function for nested defaultdict, i.e. lambda: defaultdict(CalibrationEntry).
         # This crashes qiskit parallel. Note that parallel framework passes args as
         # pickled object, however lambda function cannot be pickled.
-        self._map: dict[
-            str | circuit.instruction.Instruction, dict[tuple, CalibrationEntry]
-        ] = defaultdict(functools.partial(defaultdict, CalibrationEntry))
+        self._map: dict[str | circuit.instruction.Instruction, dict[tuple, CalibrationEntry]] = (
+            defaultdict(functools.partial(defaultdict, CalibrationEntry))
+        )
 
         # A backwards mapping from qubit to supported instructions
         self._qubit_instructions: dict[tuple[int, ...], set] = defaultdict(set)
@@ -169,10 +169,8 @@ class InstructionScheduleMap:
         if not self.has(instruction, _to_tuple(qubits)):
             if instruction in self._map:
                 raise PulseError(
-                    "Operation '{inst}' exists, but is only defined for qubits "
-                    "{qubits}.".format(
-                        inst=instruction, qubits=self.qubits_with_instruction(instruction)
-                    )
+                    f"Operation '{instruction}' exists, but is only defined for qubits "
+                    f"{self.qubits_with_instruction(instruction)}."
                 )
             raise PulseError(f"Operation '{instruction}' is not defined for this system.")
 
@@ -250,7 +248,7 @@ class InstructionScheduleMap:
 
         # validation of target qubit
         qubits = _to_tuple(qubits)
-        if qubits == ():
+        if not qubits:
             raise PulseError(f"Cannot add definition {instruction} with no target qubits.")
 
         # generate signature

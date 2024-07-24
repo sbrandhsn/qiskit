@@ -16,8 +16,10 @@ import ddt
 import numpy as np
 
 from qiskit.circuit import QuantumCircuit, Parameter
-from qiskit.primitives.containers import BindingsArray, EstimatorPub, ObservablesArray
-from qiskit.test import QiskitTestCase
+from qiskit.primitives.containers.estimator_pub import EstimatorPub
+from qiskit.primitives.containers.observables_array import ObservablesArray
+from qiskit.primitives.containers.bindings_array import BindingsArray
+from test import QiskitTestCase  # pylint: disable=wrong-import-order
 
 
 @ddt.ddt
@@ -30,7 +32,7 @@ class EstimatorPubTestCase(QiskitTestCase):
         circuit = QuantumCircuit(2)
         circuit.rx(params[0], 0)
         circuit.ry(params[1], 1)
-        parameter_values = BindingsArray(kwvals={params: np.ones((10, 2))})
+        parameter_values = BindingsArray(data={params: np.ones((10, 2))})
         observables = ObservablesArray([{"XX": 0.1}])
         precision = 0.05
 
@@ -79,7 +81,9 @@ class EstimatorPubTestCase(QiskitTestCase):
         """Test unparameterized circuit raises for parameter values"""
         circuit = QuantumCircuit(2)
         obs = ObservablesArray([{"XY": 1}])
-        parameter_values = BindingsArray(np.zeros((2, num_params)), shape=2)
+        parameter_values = BindingsArray(
+            {(f"a{idx}" for idx in range(num_params)): np.zeros((2, num_params))}, shape=2
+        )
         if num_params == 0:
             EstimatorPub(circuit, obs, parameter_values=parameter_values)
             return
@@ -104,7 +108,9 @@ class EstimatorPubTestCase(QiskitTestCase):
         circuit.ry(params[1], 1)
 
         obs = ObservablesArray([{"XY": 1}])
-        parameter_values = BindingsArray(np.zeros((2, num_params)), shape=2)
+        parameter_values = BindingsArray(
+            {(f"a{idx}" for idx in range(num_params)): np.zeros((2, num_params))}, shape=2
+        )
 
         if num_params == len(params):
             EstimatorPub(circuit, obs, parameter_values=parameter_values)
@@ -118,7 +124,7 @@ class EstimatorPubTestCase(QiskitTestCase):
         """Test Passing in a shaped array with no parameters works"""
         circuit = QuantumCircuit(2)
         obs = ObservablesArray({"XZ": 1})
-        parameter_values = BindingsArray(np.zeros((*shape, 0)), shape=shape)
+        parameter_values = BindingsArray({(): np.zeros((*shape, 0))}, shape=shape)
         pub = EstimatorPub(circuit, obs, parameter_values=parameter_values)
         self.assertEqual(pub.shape, shape)
 
@@ -170,11 +176,24 @@ class EstimatorPubTestCase(QiskitTestCase):
         pub1 = EstimatorPub(
             circuit,
             obs,
-            parameter_values=BindingsArray(kwvals={params: np.ones((10, 2))}),
+            parameter_values=BindingsArray(data={params: np.ones((10, 2))}),
             precision=0.01,
         )
         pub2 = EstimatorPub.coerce(pub1, precision=precision)
         self.assertEqual(pub1, pub2)
+
+    def test_coerce_pub_with_exact_types(self):
+        """Test coercing an EstimatorPub"""
+        params = (Parameter("a"), Parameter("b"))
+        circuit = QuantumCircuit(2)
+        circuit.rx(params[0], 0)
+        circuit.ry(params[1], 1)
+        obs = ObservablesArray({"XY": 1})
+        params = BindingsArray(data={params: np.ones((10, 2))})
+        pub = EstimatorPub.coerce((circuit, obs, params))
+        self.assertIs(pub.circuit, circuit)
+        self.assertIs(pub.observables, obs)
+        self.assertIs(pub.parameter_values, params)
 
     @ddt.data(0.01, 0.02)
     def test_coerce_pub_without_shots(self, precision):
@@ -187,7 +206,7 @@ class EstimatorPubTestCase(QiskitTestCase):
         pub1 = EstimatorPub(
             circuit,
             obs,
-            parameter_values=BindingsArray(kwvals={params: np.ones((10, 2))}),
+            parameter_values=BindingsArray(data={params: np.ones((10, 2))}),
             precision=None,
         )
         pub2 = EstimatorPub.coerce(pub1, precision=precision)
@@ -382,7 +401,7 @@ class EstimatorPubTestCase(QiskitTestCase):
             circuit.rz(params[2 * idx + 1], 1)
 
         obs = ObservablesArray([{"XX": 1}] * np.prod(obs_shape, dtype=int)).reshape(obs_shape)
-        params = BindingsArray(np.empty(params_shape + (6,)))
+        params = BindingsArray({tuple(params): np.empty(params_shape + (6,))})
 
         pub = EstimatorPub(circuit, obs, params)
         self.assertEqual(obs.shape, obs_shape)
@@ -409,7 +428,7 @@ class EstimatorPubTestCase(QiskitTestCase):
             circuit.rz(params[2 * idx + 1], 1)
 
         obs = ObservablesArray([{"XX": 1}] * np.prod(obs_shape, dtype=int)).reshape(obs_shape)
-        params = BindingsArray(np.empty(params_shape + (6,)))
+        params = BindingsArray({tuple(params): np.empty(params_shape + (6,))})
         self.assertEqual(obs.shape, obs_shape)
         self.assertEqual(params.shape, params_shape)
 
