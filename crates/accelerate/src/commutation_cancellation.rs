@@ -253,8 +253,7 @@ pub(crate) fn cancel_commutations(
             };
 
             //dag.add_global_phase(py, &Param::Float(total_phase-new_op_phase))?;
-            //TODO do we really want this or is this a bug in the original pass?
-            // This will set the global phase to 0 even if the pass does not modify the dag otherwise
+            //TODO do we really want this instead of adding the new phase to the dag or is this a bug in the original pass?
             dag.set_global_phase(Param::Float(total_phase - new_op_phase));
 
             for node in cancel_set {
