@@ -38,6 +38,7 @@ pub mod utils;
 pub mod vf2_layout;
 
 pub mod commutation_analysis;
+pub mod commutation_cancellation;
 mod rayon_ext;
 #[cfg(test)]
 mod test;

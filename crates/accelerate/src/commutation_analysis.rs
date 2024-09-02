@@ -26,6 +26,7 @@ fn op_node_from_packed(py: Python, dag: &DAGCircuit, packed: &PackedInstruction)
             clbits: PyTuple::new_bound(py, dag.clbits.map_indices(clbits)).unbind(),
             params: packed.params_view().iter().cloned().collect(),
             extra_attrs: packed.extra_attrs.clone(),
+            #[cfg(feature = "cache_pygates")]
             py_op: packed.py_op.clone(),
         },
         sort_key: format!("{:?}", -1).into_py(py),
@@ -39,9 +40,9 @@ pub enum CommutationSetEntry {
     SetExists(Vec<AIndexSet<NodeIndex>>),
 }
 
-fn analyze_commutations_inner(
+pub fn analyze_commutations_inner(
     py: Python,
-    dag: &mut DAGCircuit,
+    dag: &DAGCircuit,
     commutation_checker: &mut CommutationChecker,
 ) -> HashMap<(Option<NodeIndex>, Wire), CommutationSetEntry> {
     let mut commutation_set: HashMap<(Option<NodeIndex>, Wire), CommutationSetEntry> =
