@@ -7,7 +7,7 @@ use pyo3::{pyfunction, pymodule, wrap_pyfunction, Bound, PyResult, Python};
 use qiskit_circuit::dag_circuit::{DAGCircuit, NodeType, Wire};
 use qiskit_circuit::operations::StandardGate::{PhaseGate, RXGate, RZGate, U1Gate};
 use qiskit_circuit::operations::{Operation, Param, StandardGate};
-use qiskit_circuit::Qubit;
+use qiskit_circuit::{dag_circuit, Qubit};
 use rustworkx_core::petgraph::stable_graph::NodeIndex;
 use std::f64::consts::PI;
 
@@ -29,15 +29,15 @@ pub(crate) fn cancel_commutations(
     basis_gates: Option<HashSet<String>>,
     target: Option<&Target>,
 ) -> PyResult<()> {
-    let basis: HashSet<String> = if target.is_some() {
-        HashSet::from_iter(target.unwrap().operation_names().map(String::from))
+    let basis: HashSet<String> = if let Some(tar) = target {
+        HashSet::from_iter(tar.operation_names().map(String::from))
     } else if basis_gates.is_some() {
-        basis_gates.unwrap()
+        basis_gates.clone().unwrap()
     } else {
         HashSet::new()
     };
 
-    let _var_z_map: hashbrown::HashMap<&str, StandardGate> =
+    let _var_z_map: HashMap<&str, StandardGate> =
         HashMap::from([("rz", RZGate), ("p", PhaseGate), ("u1", U1Gate)]);
 
     let _z_rotations: HashSet<&str> = HashSet::from(["p", "z", "u1", "rz", "t", "s"]);
@@ -47,15 +47,9 @@ pub(crate) fn cancel_commutations(
     let z_var_gate = dag
         .op_names
         .keys()
-        .filter(|g| _var_z_map.contains_key(g.as_str()))
-        .next()
+        .find(|g| _var_z_map.contains_key(g.as_str()))
         // Fallback to the first matching key from basis if there is no match in dag.op_names
-        .or_else(|| {
-            basis
-                .iter()
-                .filter(|g| _var_z_map.contains_key(g.as_str()))
-                .next()
-        })
+        .or_else(|| basis.iter().find(|g| _var_z_map.contains_key(g.as_str())))
         // get the StandardGate associated with that string
         .and_then(|key| _var_z_map.get(key.as_str()));
 
@@ -90,30 +84,31 @@ pub(crate) fn cancel_commutations(
                                 NodeType::Operation(instr) => instr,
                                 _ => panic!("Unexpected type in commutation set."),
                             };
-                            let num_qargs = dag.get_qubits(op.qubits).len().clone();
+                            let num_qargs = dag.get_qubits(op.qubits).len();
                             // no support for cancellation of parameterized gates
-                            if op.params_view().iter().all(|p| match p {
-                                Param::ParameterExpression(_) => false,
-                                _ => true,
-                            }) {
+                            if op
+                                .params_view()
+                                .iter()
+                                .all(|p| !matches!(p, Param::ParameterExpression(_)))
+                            {
                                 let op_name = op.op.name().to_string();
                                 if num_qargs == 1usize && _gates.contains(op_name.as_str()) {
                                     single_q_cancellation_sets
                                         .entry((op_name.clone(), wire, com_set_idx))
-                                        .or_insert_with(|| vec![])
+                                        .or_insert_with(Vec::new)
                                         .push(*node);
                                 }
 
                                 if num_qargs == 1usize && _z_rotations.contains(op_name.as_str()) {
                                     single_q_cancellation_sets
                                         .entry((Z_ROTATION.to_string(), wire, com_set_idx))
-                                        .or_insert_with(|| vec![])
+                                        .or_insert_with(Vec::new)
                                         .push(*node);
                                 }
                                 if num_qargs == 1usize && _x_rotations.contains(op_name.as_str()) {
                                     single_q_cancellation_sets
                                         .entry((X_ROTATION.to_string(), wire, com_set_idx))
-                                        .or_insert_with(|| vec![])
+                                        .or_insert_with(Vec::new)
                                         .push(*node);
                                 }
                                 // Don't deal with Y rotation, because Y rotation doesn't commute with
@@ -136,7 +131,7 @@ pub(crate) fn cancel_commutations(
                                     );
                                     two_q_cancellation_sets
                                         .entry(q2_key)
-                                        .or_insert_with(|| vec![])
+                                        .or_insert_with(Vec::new)
                                         .push(*node);
                                 }
                             }
@@ -148,7 +143,7 @@ pub(crate) fn cancel_commutations(
 
     for (cancel_key, cancel_set) in &two_q_cancellation_sets {
         if cancel_set.len() > 1 && _gates.contains(cancel_key.0.as_str()) {
-            for &c_node in &cancel_set[0..(cancel_set.len() / 2) as usize * 2] {
+            for &c_node in &cancel_set[0..(cancel_set.len() / 2) * 2] {
                 dag.remove_op_node(c_node);
             }
         }
@@ -159,7 +154,7 @@ pub(crate) fn cancel_commutations(
             continue;
         }
         if cancel_set.len() > 1 && _gates.contains(cancel_key.0.as_str()) {
-            for &c_node in &cancel_set[0..(cancel_set.len() / 2) as usize * 2] {
+            for &c_node in &cancel_set[0..(cancel_set.len() / 2) * 2] {
                 dag.remove_op_node(c_node);
             }
         } else if cancel_set.len() > 1 && (cancel_key.0 == Z_ROTATION || cancel_key.0 == X_ROTATION)
@@ -223,11 +218,9 @@ pub(crate) fn cancel_commutations(
                 panic!("impossible case!");
             };
 
-            // TODO do we introduce a new global phase here?
-
             let gate_angle = mod_2pi(total_angle, 0.);
 
-            let mut new_op_phase = if gate_angle.abs() > _CUTOFF_PRECISION {
+            let new_op_phase = if gate_angle.abs() > _CUTOFF_PRECISION {
                 let new_index = dag.insert_1q_on_incoming_qubit(
                     (*new_op, &[total_angle]),
                     *cancel_set.first().unwrap(),
@@ -246,15 +239,8 @@ pub(crate) fn cancel_commutations(
             } else {
                 0.0f64
             };
-            new_op_phase = if new_op_phase > 0.0 {
-                new_op_phase
-            } else {
-                2.0 * PI + new_op_phase
-            };
 
-            //dag.add_global_phase(py, &Param::Float(total_phase-new_op_phase))?;
-            //TODO do we really want this instead of adding the new phase to the dag or is this a bug in the original pass?
-            dag.set_global_phase(Param::Float(total_phase - new_op_phase));
+            dag.add_global_phase(py, &Param::Float(total_phase - new_op_phase))?;
 
             for node in cancel_set {
                 dag.remove_op_node(*node);
@@ -269,8 +255,27 @@ pub(crate) fn cancel_commutations(
     }
 
     //TODO: handle_constrol_flow_ops
-
+    handle_control_flow_ops(py, dag, commutation_checker, basis_gates, target);
     Ok(())
+}
+
+fn handle_control_flow_ops(
+    py: Python,
+    dag: &mut DAGCircuit,
+    commutation_checker: &mut CommutationChecker,
+    basis_gates: Option<HashSet<String>>,
+    target: Option<&Target>,
+) {
+    for node in dag.op_nodes(false) {
+        if let NodeType::Operation(op_node) = &dag.dag[node] {
+            if !dag_circuit::CONTROL_FLOW_OP_NAMES.contains(&op_node.op.name()) {
+                continue;
+            }
+
+            //let mapped_blocks = op_node.op.blocks.iter().map(|block| {cancel_commutations(py, block, basis_gates, target)});
+            //dag.substitute_node_with_dag(py, node, op_node.op.replace_blocks(mapped_blocks), dag.get_wires(py),false);
+        }
+    }
 }
 
 /// Wrap angle into interval [-π,π). If within atol of the endpoint, clamp to -π

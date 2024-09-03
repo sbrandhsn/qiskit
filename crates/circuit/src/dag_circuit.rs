@@ -66,7 +66,7 @@ use std::f64::consts::PI;
 #[cfg(feature = "cache_pygates")]
 use std::cell::RefCell;
 
-static CONTROL_FLOW_OP_NAMES: [&str; 4] = ["for_loop", "while_loop", "if_else", "switch_case"];
+pub static CONTROL_FLOW_OP_NAMES: [&str; 4] = ["for_loop", "while_loop", "if_else", "switch_case"];
 static SEMANTIC_EQ_SYMMETRIC: [&str; 4] = ["barrier", "swap", "break_loop", "continue_loop"];
 
 #[derive(Clone, Debug)]
@@ -797,7 +797,7 @@ impl DAGCircuit {
 
     /// Return a list of the wires in order.
     #[getter]
-    fn get_wires(&self, py: Python<'_>) -> Py<PyList> {
+    pub fn get_wires(&self, py: Python<'_>) -> Py<PyList> {
         let wires: Vec<&PyObject> = self
             .qubits
             .bits()

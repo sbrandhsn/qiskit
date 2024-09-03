@@ -76,6 +76,7 @@ class TestCommutativeCancellation(QiskitTestCase):
         expected = QuantumCircuit(qr)
         expected.append(RZGate(2.0), [qr[0]])
         expected.rx(1.0, qr[0])
+        expected.global_phase = 0.5
 
         self.assertEqual(expected, new_circuit)
 
@@ -433,6 +434,7 @@ class TestCommutativeCancellation(QiskitTestCase):
         expected.append(RZGate(np.pi * 17 / 12), [qr[2]])
         expected.append(RZGate(np.pi * 2 / 3), [qr[3]])
         expected.cx(qr[2], qr[1])
+        expected.global_phase = 3.0 / 8.0 * np.pi
 
         self.assertEqual(
             expected, new_circuit, msg=f"expected:\n{expected}\nnew_circuit:\n{new_circuit}"
