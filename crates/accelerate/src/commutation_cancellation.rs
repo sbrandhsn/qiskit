@@ -6,10 +6,13 @@ use pyo3::prelude::PyModule;
 use pyo3::{pyfunction, pymodule, wrap_pyfunction, Bound, PyResult, Python};
 use qiskit_circuit::dag_circuit::{DAGCircuit, NodeType, Wire};
 use qiskit_circuit::operations::StandardGate::{PhaseGate, RXGate, RZGate, U1Gate};
-use qiskit_circuit::operations::{Operation, Param, StandardGate};
+use qiskit_circuit::operations::{Operation, OperationRef, Param, StandardGate};
 use qiskit_circuit::{dag_circuit, Qubit};
 use rustworkx_core::petgraph::stable_graph::NodeIndex;
 use std::f64::consts::PI;
+use pyo3::prelude::*;
+use pyo3::types::PySequence;
+use qiskit_circuit::imports::CIRCUIT_TO_DAG;
 
 const _CUTOFF_PRECISION: f64 = 1e-5;
 static ROTATION_GATES: [&str; 4] = ["p", "u1", "rz", "rx"];
@@ -266,14 +269,27 @@ fn handle_control_flow_ops(
     basis_gates: Option<HashSet<String>>,
     target: Option<&Target>,
 ) {
+    let circuit_to_dag = CIRCUIT_TO_DAG.get_bound(py);
     for node in dag.op_nodes(false) {
         if let NodeType::Operation(op_node) = &dag.dag[node] {
-            if !dag_circuit::CONTROL_FLOW_OP_NAMES.contains(&op_node.op.name()) {
-                continue;
-            }
+            if op_node.op.control_flow() {
+                let OperationRef::Instruction(inst) = op_node.op.view() else {
+                    unreachable!("Control Flow operations must be a PyInstruction");
+                };
+                let inst_bound = inst.instruction.bind(py);
 
-            //let mapped_blocks = op_node.op.blocks.iter().map(|block| {cancel_commutations(py, block, basis_gates, target)});
-            //dag.substitute_node_with_dag(py, node, op_node.op.replace_blocks(mapped_blocks), dag.get_wires(py),false);
+                let raw_blocks = inst_bound.getattr("blocks")?;
+                let blocks: &Bound<PySequence> = raw_blocks.downcast()?;
+
+                let mapped_blocks = blocks.iter().iter().map(|block| {
+                    let inner_dag: &mut DAGCircuit = &mut circuit_to_dag.call1((block.clone(),))?.extract()?;
+                    cancel_commutations(py, inner_dag, commutation_checker, basis_gates, target);
+                }).collect();
+
+
+                //let mapped_blocks = op_node.op.blocks.iter().map(|block| {cancel_commutations(py, block, basis_gates, target)});
+                //dag.substitute_node_with_dag(py, node, op_node.op.replace_blocks(mapped_blocks), dag.get_wires(py),false);
+            }
         }
     }
 }
