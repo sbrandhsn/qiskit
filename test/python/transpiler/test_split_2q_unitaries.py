@@ -19,7 +19,7 @@ import numpy as np
 
 from qiskit import QuantumCircuit, QuantumRegister, transpile
 from qiskit.circuit.library import UnitaryGate, XGate, ZGate, HGate
-from qiskit.circuit import Parameter, CircuitInstruction
+from qiskit.circuit import Parameter, CircuitInstruction, Gate
 from qiskit.providers.fake_provider import GenericBackendV2
 from qiskit.quantum_info import Operator
 from qiskit.transpiler import PassManager
@@ -224,26 +224,39 @@ class TestSplit2QUnitaries(QiskitTestCase):
         qc_split = pm.run(qc)
         self.assertEqual(26, qc_split.num_nonlocal_gates())
 
-    def test_custom_gate(self):
-        """Test that the pass handles custom gates correctly."""
-        from qiskit.circuit import Gate
+    def test_gate_no_array(self):
+        """
+        Test that the pass doesn't fail when the circuit contains a custom gate
+        with no ``__array__`` implementation.
 
-        class CustomCX(Gate):
-            """Custom CX"""
+        Reproduce from: https://github.com/Qiskit/qiskit/issues/12970
+        """
+
+        class MyGate(Gate):
+            """Custom gate"""
 
             def __init__(self):
-                super().__init__("custom_cx", 2, [])
+                super().__init__("mygate", 2, [])
 
-            def _define(self):
-                self._definition = QuantumCircuit(2)
-                self._definition.cx(0, 1)
+            def to_matrix(self):
+                return np.eye(4, dtype=complex)
+                # return np.eye(4, dtype=float)
+
+        def mygate(self, qubit1, qubit2):
+            return self.append(MyGate(), [qubit1, qubit2], [])
+
+        QuantumCircuit.mygate = mygate
 
         qc = QuantumCircuit(2)
-        qc.append(CustomCX(), [0, 1])
+        qc.mygate(0, 1)
 
         pm = PassManager()
         pm.append(Collect2qBlocks())
         pm.append(ConsolidateBlocks())
         pm.append(Split2QUnitaries())
         qc_split = pm.run(qc)
-        self.assertEqual(1, qc_split.num_nonlocal_gates())
+
+        self.assertTrue(Operator(qc).equiv(qc_split))
+        self.assertTrue(
+            matrix_equal(Operator(qc).data, Operator(qc_split).data, ignore_phase=False)
+        )

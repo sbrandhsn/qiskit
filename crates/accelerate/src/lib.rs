@@ -14,6 +14,7 @@ use std::env;
 
 use pyo3::import_exception;
 
+pub mod circuit_library;
 pub mod commutation_checker;
 pub mod convert_2q_block_matrix;
 pub mod dense_layout;
@@ -36,7 +37,6 @@ pub mod two_qubit_decompose;
 pub mod uc_gate;
 pub mod utils;
 pub mod vf2_layout;
-
 pub mod commutation_analysis;
 pub mod commutation_cancellation;
 mod rayon_ext;
