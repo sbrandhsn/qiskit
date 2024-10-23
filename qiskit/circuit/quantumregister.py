@@ -24,7 +24,9 @@ from .bit import Bit
 
 class Qubit(Bit):
     """Implement a quantum bit."""
+
     pass
+
 
 class QuantumRegister(Register):
     """Implement a quantum register."""

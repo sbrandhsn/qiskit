@@ -10,7 +10,9 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Assembler Test."""
+"""Assembler Test.
+FULLY REMOVE ONCE Qobj, assemble AND disassemble ARE REMOVED.
+"""
 
 import unittest
 
@@ -55,14 +57,15 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
 
         qubit_lo_freq = [5e9, 5e9]
         meas_lo_freq = [6.7e9, 6.7e9]
-        qobj = assemble(
-            circ,
-            shots=2000,
-            memory=True,
-            qubit_lo_freq=qubit_lo_freq,
-            meas_lo_freq=meas_lo_freq,
-        )
-        circuits, run_config_out, headers = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(
+                circ,
+                shots=2000,
+                memory=True,
+                qubit_lo_freq=qubit_lo_freq,
+                meas_lo_freq=meas_lo_freq,
+            )
+            circuits, run_config_out, headers = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 2)
         self.assertEqual(run_config_out.memory_slots, 2)
@@ -91,8 +94,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         circ1.cx(qr1[0], qr1[2])
         circ1.measure(qr1, qc1)
 
-        qobj = assemble([circ0, circ1], shots=100, memory=False, seed=6)
-        circuits, run_config_out, headers = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble([circ0, circ1], shots=100, memory=False, seed=6)
+            circuits, run_config_out, headers = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 3)
         self.assertEqual(run_config_out.memory_slots, 3)
@@ -113,8 +117,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         circ.cx(qr[0], qr[1])
         circ.measure(qr, qc)
 
-        qobj = assemble(circ)
-        circuits, run_config_out, headers = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(circ)
+            circuits, run_config_out, headers = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 2)
         self.assertEqual(run_config_out.memory_slots, 2)
@@ -128,8 +133,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         circ = QuantumCircuit(q, name="circ")
         circ.initialize([1 / np.sqrt(2), 0, 0, 1 / np.sqrt(2)], q[:])
 
-        qobj = assemble(circ)
-        circuits, run_config_out, header = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(circ)
+            circuits, run_config_out, header = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 2)
         self.assertEqual(run_config_out.memory_slots, 0)
@@ -142,8 +148,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         q = QuantumRegister(2, name="q")
         circ = QuantumCircuit(q, name="circ")
         circ.append(Isometry(qi.random_unitary(4).data, 0, 0), circ.qubits)
-        qobj = assemble(circ)
-        circuits, run_config_out, header = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(circ)
+            circuits, run_config_out, header = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 2)
         self.assertEqual(run_config_out.memory_slots, 0)
@@ -169,8 +176,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         c = ClassicalRegister(4, name="c")
         circ = QuantumCircuit(q, c, name="circ")
         circ.append(opaque_inst, [q[0], q[2], q[5], q[3]], [c[3], c[0]])
-        qobj = assemble(circ)
-        circuits, run_config_out, header = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(circ)
+            circuits, run_config_out, header = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 6)
         self.assertEqual(run_config_out.memory_slots, 4)
@@ -187,8 +195,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         qc.measure(qr[0], cr1)  # Measure not required for a later conditional
         qc.measure(qr[1], cr2[1])  # Measure required for a later conditional
         qc.h(qr[1]).c_if(cr2, 3)
-        qobj = assemble(qc)
-        circuits, run_config_out, header = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(qc)
+            circuits, run_config_out, header = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 2)
         self.assertEqual(run_config_out.memory_slots, 3)
@@ -202,8 +211,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         cr = ClassicalRegister(1)
         qc = QuantumCircuit(qr, cr)
         qc.h(qr[0]).c_if(cr, 1)
-        qobj = assemble(qc)
-        circuits, run_config_out, header = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(qc)
+            circuits, run_config_out, header = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 1)
         self.assertEqual(run_config_out.memory_slots, 1)
@@ -222,8 +232,10 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         cr = ClassicalRegister(2)
         qc = QuantumCircuit(qr, cr)
         qc.h(qr[0]).c_if(cr[0], 1)
-        qobj = assemble(qc)
-        circuits, run_config_out, header = disassemble(qobj)
+
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(qc)
+            circuits, run_config_out, header = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, len(qr))
         self.assertEqual(run_config_out.memory_slots, len(cr))
@@ -237,8 +249,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         cr = ClassicalRegister(5)
         qc = QuantumCircuit(qr, cr)
         qc.mcx([0, 1, 2], 4)
-        qobj = assemble(qc)
-        circuits, run_config_out, header = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(qc)
+            circuits, run_config_out, header = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 5)
         self.assertEqual(run_config_out.memory_slots, 5)
@@ -260,8 +273,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         qc.cx(qr[1], qr[0]).c_if(cr3, 14)
         qc.ccx(qr[0], qr[2], qr[1]).c_if(cr4, 1)
         qc.h(qr).c_if(cr1, 3)
-        qobj = assemble(qc)
-        circuits, run_config_out, header = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(qc)
+            circuits, run_config_out, header = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 3)
         self.assertEqual(run_config_out.memory_slots, 15)
@@ -275,8 +289,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         cr = ClassicalRegister(2)
         qc = QuantumCircuit(qr, cr)
         qc.h(qr[0]).c_if(cr[1], True)
-        qobj = assemble(qc)
-        circuits, run_config_out, header = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(qc)
+            circuits, run_config_out, header = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 2)
         self.assertEqual(run_config_out.memory_slots, 2)
@@ -293,8 +308,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         qc.h(qr[0]).c_if(cr1[1], False)
         qc.h(qr[1]).c_if(cr[0], True)
         qc.cx(qr[0], qr[1]).c_if(cr1[0], False)
-        qobj = assemble(qc)
-        circuits, run_config_out, header = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(qc)
+            circuits, run_config_out, header = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.n_qubits, 2)
         self.assertEqual(run_config_out.memory_slots, 4)
@@ -333,8 +349,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         qc.add_calibration("h", [0], h_sched)
         qc.add_calibration(RXGate(np.pi), [0], x180)
 
-        qobj = assemble(qc, FakeOpenPulse2Q())
-        output_circuits, _, _ = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(qc, FakeOpenPulse2Q())
+            output_circuits, _, _ = disassemble(qobj)
 
         self.assertCircuitCalibrationsEqual([qc], output_circuits)
 
@@ -347,11 +364,12 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         qc.h(0)
         qc.add_calibration("h", [0], h_sched)
 
-        backend = FakeOpenPulse2Q()
-        backend.configuration().parametric_pulses = ["drag"]
+        with self.assertWarns(DeprecationWarning):
+            backend = FakeOpenPulse2Q()
+            backend.configuration().parametric_pulses = ["drag"]
 
-        qobj = assemble(qc, backend)
-        output_circuits, _, _ = disassemble(qobj)
+            qobj = assemble(qc, backend)
+            output_circuits, _, _ = disassemble(qobj)
         out_qc = output_circuits[0]
 
         self.assertCircuitCalibrationsEqual([qc], output_circuits)
@@ -380,8 +398,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         qc_1.h(0)
 
         circuits = [qc_0, qc_1]
-        qobj = assemble(circuits, FakeOpenPulse2Q())
-        output_circuits, _, _ = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(circuits, FakeOpenPulse2Q())
+            output_circuits, _, _ = disassemble(qobj)
 
         self.assertCircuitCalibrationsEqual(circuits, output_circuits)
 
@@ -401,8 +420,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
         qc_1.add_calibration(RXGate(np.pi), [1], sched)
 
         circuits = [qc_0, qc_1]
-        qobj = assemble(circuits, FakeOpenPulse2Q())
-        output_circuits, _, _ = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(circuits, FakeOpenPulse2Q())
+            output_circuits, _, _ = disassemble(qobj)
 
         self.assertCircuitCalibrationsEqual(circuits, output_circuits)
 
@@ -416,8 +436,9 @@ class TestQuantumCircuitDisassembler(QiskitTestCase):
 
         qc.add_calibration("test", [0], test_sched)
 
-        qobj = assemble(qc, FakeOpenPulse2Q())
-        output_circuits, _, _ = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(qc, FakeOpenPulse2Q())
+            output_circuits, _, _ = disassemble(qobj)
 
         self.assertEqual(len(qc.calibrations), len(output_circuits[0].calibrations))
         self.assertEqual(qc.calibrations.keys(), output_circuits[0].calibrations.keys())
@@ -439,7 +460,8 @@ class TestPulseScheduleDisassembler(QiskitTestCase):
 
     def setUp(self):
         super().setUp()
-        self.backend = FakeOpenPulse2Q()
+        with self.assertWarns(DeprecationWarning):
+            self.backend = FakeOpenPulse2Q()
         self.backend_config = self.backend.configuration()
         self.backend_config.parametric_pulses = ["constant", "gaussian", "gaussian_square", "drag"]
 
@@ -459,8 +481,9 @@ class TestPulseScheduleDisassembler(QiskitTestCase):
                 pulse.play(pulse.library.Constant(8, 0.1), d1)
                 pulse.measure_all()
 
-        qobj = assemble(sched, backend=self.backend, shots=2000)
-        scheds, run_config_out, _ = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(sched, backend=self.backend, shots=2000)
+            scheds, run_config_out, _ = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.memory_slots, 2)
         self.assertEqual(run_config_out.shots, 2000)
@@ -501,8 +524,9 @@ class TestPulseScheduleDisassembler(QiskitTestCase):
                 pulse.play(pulse.library.Constant(8, 0.4), d1)
                 pulse.measure_all()
 
-        qobj = assemble([sched0, sched1], backend=self.backend, shots=2000)
-        scheds, run_config_out, _ = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble([sched0, sched1], backend=self.backend, shots=2000)
+            scheds, run_config_out, _ = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
         self.assertEqual(run_config_out.memory_slots, 2)
         self.assertEqual(run_config_out.shots, 2000)
@@ -521,8 +545,9 @@ class TestPulseScheduleDisassembler(QiskitTestCase):
                 pulse.play(pulse.library.GaussianSquare(10, 1.0, 2.0, 3), d0)
                 pulse.play(pulse.library.Drag(10, 1.0, 2.0, 0.1), d0)
 
-        qobj = assemble(sched, backend=self.backend, shots=2000)
-        scheds, _, _ = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble(sched, backend=self.backend, shots=2000)
+            scheds, _, _ = disassemble(qobj)
         self.assertEqual(scheds[0], target_qobj_transform(sched))
 
     def test_disassemble_schedule_los(self):
@@ -539,8 +564,9 @@ class TestPulseScheduleDisassembler(QiskitTestCase):
             {d0: 4.5e9, d1: 5e9, m0: 6e9, m1: 7e9},
             {d0: 5e9, d1: 4.5e9, m0: 7e9, m1: 6e9},
         ]
-        qobj = assemble([sched0, sched1], backend=self.backend, schedule_los=schedule_los)
-        _, run_config_out, _ = disassemble(qobj)
+        with self.assertWarns(DeprecationWarning):
+            qobj = assemble([sched0, sched1], backend=self.backend, schedule_los=schedule_los)
+            _, run_config_out, _ = disassemble(qobj)
         run_config_out = RunConfig(**run_config_out)
 
         self.assertEqual(run_config_out.schedule_los, schedule_los)

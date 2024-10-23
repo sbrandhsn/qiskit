@@ -47,18 +47,18 @@ class TestVisualizationUtils(QiskitTestCase):
         (qregs, cregs, layered_ops) = _utils._get_layered_instructions(self.circuit)
 
         exp = [
-            [("cx", (self.qr2[0], self.qr2[1]), ()), ("cx", (self.qr1[0], self.qr1[1]), ())],
-            [("measure", (self.qr2[0],), (self.cr2[0],))],
-            [("measure", (self.qr1[0],), (self.cr1[0],))],
-            [("cx", (self.qr2[1], self.qr2[0]), ()), ("cx", (self.qr1[1], self.qr1[0]), ())],
-            [("measure", (self.qr2[1],), (self.cr2[1],))],
-            [("measure", (self.qr1[1],), (self.cr1[1],))],
+            {("cx", (self.qr2[0], self.qr2[1]), ()), ("cx", (self.qr1[0], self.qr1[1]), ())},
+            {("measure", (self.qr2[0],), (self.cr2[0],))},
+            {("measure", (self.qr1[0],), (self.cr1[0],))},
+            {("cx", (self.qr2[1], self.qr2[0]), ()), ("cx", (self.qr1[1], self.qr1[0]), ())},
+            {("measure", (self.qr2[1],), (self.cr2[1],))},
+            {("measure", (self.qr1[1],), (self.cr1[1],))},
         ]
 
         self.assertEqual([self.qr1[0], self.qr1[1], self.qr2[0], self.qr2[1]], qregs)
         self.assertEqual([self.cr1[0], self.cr1[1], self.cr2[0], self.cr2[1]], cregs)
         self.assertEqual(
-            exp, [[(op.name, op.qargs, op.cargs) for op in ops] for ops in layered_ops]
+            exp, [{(op.name, op.qargs, op.cargs) for op in ops} for ops in layered_ops]
         )
 
     def test_get_layered_instructions_reverse_bits(self):
@@ -68,18 +68,18 @@ class TestVisualizationUtils(QiskitTestCase):
         )
 
         exp = [
-            [("cx", (self.qr2[0], self.qr2[1]), ()), ("cx", (self.qr1[0], self.qr1[1]), ())],
-            [("measure", (self.qr2[0],), (self.cr2[0],))],
-            [("measure", (self.qr1[0],), (self.cr1[0],)), ("cx", (self.qr2[1], self.qr2[0]), ())],
-            [("cx", (self.qr1[1], self.qr1[0]), ())],
-            [("measure", (self.qr2[1],), (self.cr2[1],))],
-            [("measure", (self.qr1[1],), (self.cr1[1],))],
+            {("cx", (self.qr2[0], self.qr2[1]), ()), ("cx", (self.qr1[0], self.qr1[1]), ())},
+            {("measure", (self.qr2[0],), (self.cr2[0],))},
+            {("measure", (self.qr1[0],), (self.cr1[0],)), ("cx", (self.qr2[1], self.qr2[0]), ())},
+            {("cx", (self.qr1[1], self.qr1[0]), ())},
+            {("measure", (self.qr2[1],), (self.cr2[1],))},
+            {("measure", (self.qr1[1],), (self.cr1[1],))},
         ]
 
         self.assertEqual([self.qr2[1], self.qr2[0], self.qr1[1], self.qr1[0]], qregs)
         self.assertEqual([self.cr2[1], self.cr2[0], self.cr1[1], self.cr1[0]], cregs)
         self.assertEqual(
-            exp, [[(op.name, op.qargs, op.cargs) for op in ops] for ops in layered_ops]
+            exp, [{(op.name, op.qargs, op.cargs) for op in ops} for ops in layered_ops]
         )
 
     def test_get_layered_instructions_remove_idle_wires(self):
@@ -102,18 +102,18 @@ class TestVisualizationUtils(QiskitTestCase):
         (qregs, cregs, layered_ops) = _utils._get_layered_instructions(circuit, idle_wires=False)
 
         exp = [
-            [("cx", (qr2[0], qr2[1]), ()), ("cx", (qr1[0], qr1[1]), ())],
-            [("measure", (qr2[0],), (cr2[0],))],
-            [("measure", (qr1[0],), (cr1[0],))],
-            [("cx", (qr2[1], qr2[0]), ()), ("cx", (qr1[1], qr1[0]), ())],
-            [("measure", (qr2[1],), (cr2[1],))],
-            [("measure", (qr1[1],), (cr1[1],))],
+            {("cx", (qr2[0], qr2[1]), ()), ("cx", (qr1[0], qr1[1]), ())},
+            {("measure", (qr2[0],), (cr2[0],))},
+            {("measure", (qr1[0],), (cr1[0],))},
+            {("cx", (qr2[1], qr2[0]), ()), ("cx", (qr1[1], qr1[0]), ())},
+            {("measure", (qr2[1],), (cr2[1],))},
+            {("measure", (qr1[1],), (cr1[1],))},
         ]
 
         self.assertEqual([qr1[0], qr1[1], qr2[0], qr2[1]], qregs)
         self.assertEqual([cr1[0], cr1[1], cr2[0], cr2[1]], cregs)
         self.assertEqual(
-            exp, [[(op.name, op.qargs, op.cargs) for op in ops] for ops in layered_ops]
+            exp, [{(op.name, op.qargs, op.cargs) for op in ops} for ops in layered_ops]
         )
 
     def test_get_layered_instructions_left_justification_simple(self):
@@ -143,7 +143,7 @@ class TestVisualizationUtils(QiskitTestCase):
         ]
 
         self.assertEqual(
-            l_exp, [[(op.name, op.qargs, op.cargs) for op in ops] for ops in layered_ops]
+            l_exp, [{(op.name, op.qargs, op.cargs) for op in ops} for ops in layered_ops]
         )
 
     def test_get_layered_instructions_right_justification_simple(self):
@@ -173,7 +173,7 @@ class TestVisualizationUtils(QiskitTestCase):
         ]
 
         self.assertEqual(
-            r_exp, [[(op.name, op.qargs, op.cargs) for op in ops] for ops in layered_ops]
+            r_exp, [{(op.name, op.qargs, op.cargs) for op in ops} for ops in layered_ops]
         )
 
     def test_get_layered_instructions_left_justification_less_simple(self):
@@ -241,7 +241,7 @@ class TestVisualizationUtils(QiskitTestCase):
         ]
 
         self.assertEqual(
-            l_exp, [[(op.name, op.qargs, op.cargs) for op in ops] for ops in layered_ops]
+            l_exp, [{(op.name, op.qargs, op.cargs) for op in ops} for ops in layered_ops]
         )
 
     def test_get_layered_instructions_right_justification_less_simple(self):
@@ -311,7 +311,7 @@ class TestVisualizationUtils(QiskitTestCase):
         ]
 
         self.assertEqual(
-            r_exp, [[(op.name, op.qargs, op.cargs) for op in ops] for ops in layered_ops]
+            r_exp, [{(op.name, op.qargs, op.cargs) for op in ops} for ops in layered_ops]
         )
 
     def test_get_layered_instructions_op_with_cargs(self):
@@ -355,7 +355,7 @@ class TestVisualizationUtils(QiskitTestCase):
         ]
 
         self.assertEqual(
-            expected, [[(op.name, op.qargs, op.cargs) for op in ops] for ops in layered_ops]
+            expected, [{(op.name, op.qargs, op.cargs) for op in ops} for ops in layered_ops]
         )
 
     @unittest.skipUnless(optionals.HAS_PYLATEX, "needs pylatexenc")
